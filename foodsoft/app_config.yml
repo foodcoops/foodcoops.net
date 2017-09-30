@@ -13,14 +13,14 @@ default: &defaults
   # foodcoop contact information (used for FAX messages)
   contact:
     street: Grüne Straße 103
-    zip_code: "10997"
-    city: Berlin
-    country: Deutschland
+    zip_code: "10101"
+    city: Greencity
+    country: Foodland
     email: foodsoft@foodcoop.test
-    phone: "030 323 23249"
+    phone:
 
   # Homepage
-  homepage: http://www.foodcoop.test
+  homepage: https://foodcoops.github.io
 
   # foodsoft documentation URL
   help_url: https://github.com/foodcoops/foodsoft/wiki/Doku
@@ -29,7 +29,7 @@ default: &defaults
   applepear_url: https://github.com/foodcoops/foodsoft/wiki/%C3%84pfel-u.-Birnen
 
   # custom foodsoft software URL (used in footer)
-  #foodsoft_url: https://github.com/foodcoops/foodsoft
+  foodsoft_url: https://foodcoops.github.io
 
   # Default language
   #default_locale: en
@@ -125,8 +125,8 @@ default: &defaults
 
   # Config for the exception_notification plugin
   notification:
-    error_recipients:
-      - admin@foodcoop.test
+    #error_recipients:
+    #  - admin@foodcoop.test
     sender_address: "\"Foodsoft Error\" <foodsoft@foodcoop.test>"
     email_prefix: "[Foodsoft]"
 
@@ -147,8 +147,9 @@ default: &defaults
   #  password:
   #  encoding: utf8
   #  socket: /opt/lampp/var/mysql/mysql.sock
-  # Instead of defining all details here, you can also point to an entry in database.yml.
-  #shared_lists: shared_lists
+  # Instead of defining all details here, you can also point to an entry in database.yml,
+  # or provide a database url.
+  shared_lists: <%= ENV['SHAREDLISTS_DATABASE_URL'] %>
 
 development:
   <<: *defaults
