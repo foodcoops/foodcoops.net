@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Run acme.sh daemon, and also create a dummy certificate for starting up
+#
+CERTS_DIR=/acme.sh/certs
+UPDATED_FILE=/acme.sh/updated
+
+has_certs() {
+  ls ${CERTS_DIR}/*.pem >/dev/null 2>&1
+}
+
+mkdir -p ${CERTS_DIR}
+
+# generate dummy ssl certificate if needed
+if ! has_certs; then
+  echo "WARNING: no certificates found, generating dummy"
+  openssl req -subj '/CN=localhost' -new -newkey rsa:2048 -days 365 -nodes -x509 \
+     -keyout ${CERTS_DIR}/dummy.key -out ${CERTS_DIR}/dummy.crt
+  cat ${CERTS_DIR}/dummy.key ${CERTS_DIR}/dummy.crt >${CERTS_DIR}/dummy.pem
+  rm -f ${CERTS_DIR}/dummy.key ${CERTS_DIR}/dummy.crt
+  touch ${UPDATED_FILE}
+fi
+
+/entry.sh daemon --standalone --reloadcmd "cat \$CERT_KEY_PATH \$CERT_FULLCHAIN_PATH >${CERTS_DIR}/bundle.pem && touch ${UPDATED_FILE}" $@

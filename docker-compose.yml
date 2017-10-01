@@ -1,21 +1,51 @@
 version: '2'
 services:
-  foodsoft:
+
+  #
+  # Foodsoft (main)
+  #
+
+  foodsoft_web:
     build: foodsoft
     restart: always
     environment:
-      - DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/foodsoft_test?encoding=utf8
+      - DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/foodsoft?encoding=utf8
+      - SHAREDLISTS_DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/sharedlists?encoding=utf8
       - QUEUE=foodsoft_notifier
       - REDIS_URL=redis://redis:6379
       - SECRET_KEY_BASE=${FOODSOFT_SECRET_KEY_BASE}
+      - RAILS_FORCE_SSL=false
 
   foodsoft_cron:
-    extends: foodsoft
-    command: cron -f
+    extends: foodsoft_web
+    command: ./proc-start cron
 
-  foodsoft_resque:
-    extends: foodsoft
-    command: rake resque:work
+  foodsoft_worker:
+    extends: foodsoft_web
+    command: ./proc-start worker
+
+  #
+  # Sharedlists
+  #
+
+  sharedlists_web:
+    image: foodcoops/sharedlists:latest
+    restart: always
+    environment:
+      - DATABASE_URL=mysql2://sharedlists:${SHAREDLISTS_DB_PASSWORD}@mariadb/sharedlists?encoding=utf8
+      - SECRET_TOKEN=${SHAREDLISTS_SECRET_KEY_BASE}
+      - RAILS_RELATIVE_URL_ROOT=/sharedlists
+      - RAILS_FORCE_SSL=false
+    volumes:
+      - supplier_assets:/usr/src/app/supplier_assets
+
+  sharedlists_cron:
+    extends: sharedlists_web
+    command: ./proc-start cron
+
+  #
+  # Supporting services
+  #
 
   haproxy:
     build: haproxy
@@ -23,14 +53,20 @@ services:
     ports:
       - "80:80"
       - "443:443"
-#    volumes:
-#      - certs:/certs:ro
+    volumes:
+      - certs:/certs:ro
+
+  acme:
+    build: acme
+    restart: always
+    volumes:
+      - certs:/acme.sh
 
   mariadb:
     image: mariadb:10.1
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ROOT_PASSWORD
     volumes:
       - mariadb:/var/lib/mysql
 
@@ -39,5 +75,6 @@ services:
     restart: always
 
 volumes:
-#  certs:
+  certs:
   mariadb:
+  supplier_assets:
