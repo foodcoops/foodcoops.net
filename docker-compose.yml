@@ -53,8 +53,14 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    #volumes:
-    #  - certs:/certs:ro
+    volumes:
+      - certs:/certs:ro
+
+  acme:
+    build: acme
+    restart: always
+    volumes:
+      - certs:/acme.sh
 
   mariadb:
     image: mariadb:10.1
@@ -69,6 +75,6 @@ services:
     restart: always
 
 volumes:
-  #certs:
+  certs:
   mariadb:
   supplier_assets:

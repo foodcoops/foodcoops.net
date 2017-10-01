@@ -1,8 +1,6 @@
 Foodcoops.net deployment demo
 =============================
 
-You need to create a certificate for your setup before you can start. For testing purpose only you can add it via `COPY` in `haproxy/Dockerfile` or you mount it via an volume in the `docker-compose.yml`. Check out the comments the files (also see [section below](#Generating_test_certificates)).
-
 To get it running you need to provide the private information via environment variables to `docker-compose`. Here is an example to build and start the project:
 
 ```shell
@@ -46,19 +44,18 @@ docker-compose run --rm sharedlists_web bundle exec rake db:setup
 ```
 
 
-## Generating test certificates
+## SSL Certificates
 
-To get started, you might want to generate test certificates.
+_This section is a work in progress._
+
+On first startup, a dummy SSL certificate is generated. This is required to get everything
+going, and see if everything works. When all is ready, you can easily request a certificate
+from [letsencrypt](https://letsencrypt.org/).
 
 ```shell
-cd haproxy
-openssl genrsa -out cert.key 2048
-openssl req -new -key cert.key -out cert.csr
-# for "Common Name" specify e.g. localhost
-openssl x509 -req -days 3650 -in cert.csr -signkey cert.key -out cert.crt
-cat cert.key cert.crt >certificate.pem
+docker-compose run --rm acme --issue -d app.example.com --standalone --test \
+  --reloadcmd 'cat $CERT_KEY_PATH $CERT_FULLCHAIN_PATH >/acme.sh/certs/bundle.pem && touch /acme.sh/updated'
 ```
 
-Uncomment the line in `haproxy/Dockerfile` that copies this, and (re-)run `docker-compose build`.
-
-Now you're ready to run `docker-compose up` for the first time.
+Replace `app.example.com` with yours, and remove `--test` when you're confident it works.
+This will _almost_ work (since the one-off instance doesn't get http requests forwarded).
