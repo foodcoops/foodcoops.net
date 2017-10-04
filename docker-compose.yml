@@ -15,6 +15,9 @@ services:
       - REDIS_URL=redis://redis:6379
       - SECRET_KEY_BASE=${FOODSOFT_SECRET_KEY_BASE}
       - RAILS_FORCE_SSL=false
+      - EMAIL_SENDER=foodsoft@${DOMAIN}
+      #- ERROR_RECIPIENTS=
+      - HOSTNAME
 
   foodsoft_cron:
     extends: foodsoft

@@ -3,10 +3,10 @@
 default: &defaults
   # If you wanna serve more than one foodcoop with one installation
   # Don't forget to setup databases for each foodcoop. See also MULTI_COOP_INSTALL
-  multi_coop_install: false
+  multi_coop_install: true
 
   # If multi_coop_install you have to use a coop name, which you you wanna be selected by default
-  default_scope: 'f'
+  default_scope: 'demo'
 
   # name of this foodcoop
   name: FC Test
@@ -114,7 +114,7 @@ default: &defaults
   #  ......
 
   # email address to be used as sender
-  email_sender: foodsoft@foodcoop.test
+  email_sender: <%= ENV['EMAIL_SENDER'] %>
 
   # domain to be used for reply emails
   #reply_email_domain: reply.foodcoop.test
@@ -125,37 +125,29 @@ default: &defaults
 
   # Config for the exception_notification plugin
   notification:
-    #error_recipients:
-    #  - admin@foodcoop.test
-    sender_address: "\"Foodsoft Error\" <foodsoft@foodcoop.test>"
+    error_recipients: <%= (ENV['ERROR_RECIPIENTS'] || '').split %>
+    sender_address: <%= "\\\"Foodsoft Error\\\" <#{ENV['EMAIL_SENDER']}>" %>
     email_prefix: "[Foodsoft]"
 
   # http config for this host to generate links in emails (uses environment config when not set)
-  #protocol: http
-  #host: localhost
+  protocol: https
+  host: <%= ENV['HOSTNAME'] %>
   #port: 3000
 
   # Access to sharedlists, the external article-database.
   # This allows a foodcoop to subscribe to a selection of a supplier's full assortment,
   # and makes it possible to share data with several foodcoops. Using this requires installing
   # an additional application with a separate database.
-  #shared_lists:
-  #  adapter: mysql2
-  #  host: localhost
-  #  database: sharedlists_development
-  #  username: root
-  #  password:
-  #  encoding: utf8
-  #  socket: /opt/lampp/var/mysql/mysql.sock
-  # Instead of defining all details here, you can also point to an entry in database.yml,
-  # or provide a database url.
   shared_lists: <%= ENV['SHAREDLISTS_DATABASE_URL'] %>
 
-development:
-  <<: *defaults
-
-test:
-  <<: *defaults
-
+# don't remove this, required to run the app
 production:
   <<: *defaults
+
+# demo instance
+demo:
+  <<: *defaults
+  name: Foodcoop Demo
+  database:
+    database: fs_demo
+
