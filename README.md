@@ -1,8 +1,6 @@
 Foodcoops.net deployment demo
 =============================
 
-You need to create a certificate for your setup before you can start. For testing purpose only you can add it via `COPY` in `haproxy/Dockerfile` or you mount it via an volume in the `docker-compose.yml`. Check out the comments the files (also see [section below](#Generating_test_certificates)).
-
 To get it running you need to provide the private information via environment variables to `docker-compose`. Here is an example to build and start the project:
 
 ```shell
@@ -62,23 +60,15 @@ to work with `db`-setup tasks, so we need to do this differently right now.
 ```shell
 docker-compose run --rm \
   -e 'DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/fs_demo?encoding=utf8' \
-  foodsoft bundle exec rake db:setup db:seed:small.en
+  foodsoft bundle exec rake db:schema:load db:seed:small.en
 ```
 
+## SSL certificates
 
-## Generating test certificates
+By default, a dummy SSL certificate will be generated (for `localhost`). This is useful for
+development, and to bootstrap easily.
 
-To get started, you might want to generate test certificates.
+For production, you need proper SSL certificates. These are provided by
+[letsencrypt](https://letsencrypt.org). Set `HOSTNAME` and make sure the DNS is setup correctly.
+Then set `CERTBOT_ENABLED=1`, which signifies the certbot instance to obtain real certificates.
 
-```shell
-cd haproxy
-openssl genrsa -out cert.key 2048
-openssl req -new -key cert.key -out cert.csr
-# for "Common Name" specify e.g. localhost
-openssl x509 -req -days 3650 -in cert.csr -signkey cert.key -out cert.crt
-cat cert.key cert.crt >certificate.pem
-```
-
-Uncomment the line in `haproxy/Dockerfile` that copies this, and (re-)run `docker-compose build`.
-
-Now you're ready to run `docker-compose up` for the first time.

@@ -53,11 +53,26 @@ services:
   haproxy:
     build: haproxy
     restart: always
+    environment:
+      - HAPROXY_RELOAD_FILE=/haproxy_triggers/reload
     ports:
       - "80:80"
       - "443:443"
-    #volumes:
-    #  - certs:/certs:ro
+    volumes:
+      - certs:/certs:ro
+      - haproxy_triggers:/haproxy_triggers
+
+  certbot:
+    image: foodcoops/certbot:latest
+    restart: always
+    environment:
+      - CERTBOT_TOUCH_FILE=/haproxy_triggers/reload
+      - CERTBOT_DOMAINS=${HOSTNAME}
+      - CERTBOT_ENABLED
+      - CERTBOT_EMAIL
+    volumes:
+      - certs:/certs
+      - haproxy_triggers:/haproxy_triggers
 
   mariadb:
     image: mariadb:10.1
@@ -72,6 +87,7 @@ services:
     restart: always
 
 volumes:
-  #certs:
+  certs:
+  haproxy_triggers:
   mariadb:
   supplier_assets:
