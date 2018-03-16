@@ -1,0 +1,80 @@
+#
+# Postfix configuration (forward-only)
+#
+# Inspired by
+#   https://github.com/Mailu/Mailu/blob/master/core/postfix/
+#   https://github.com/hokstadconsulting/docker-postfix/
+#   https://www.howtoforge.com/community/threads/62955/
+#
+
+# Main domain and hostname
+mydomain = example.test        # overridden by postconf
+myhostname = smtp.example.test # overridden by postconf
+myorigin = $mydomain
+
+# Queue location
+#
+# When messages are relayed, it's important to have the queue directory
+# at a standard place and put on a Docker volume, or else messages may
+# get lost across instance restarts. For now, we only forward, so it's
+# not yet necessary to configure this.
+#queue_directory = /queue
+
+# Message size limit
+message_size_limit = 50000000
+
+# Relayed networks
+mynetworks = 127.0.0.1/32 [::1]/128
+
+# Forward mydomain to downstream smtp servers and disable local delivery.
+mydestination = $mydomain
+transport_maps = inline:{
+    { foodsoft@$mydomain    = smtp:[foodsoft_smtp]:2525    },
+    { sharedlists@$mydomain = smtp:[sharedlists_smtp]:2525 }
+  }
+local_recipient_maps =
+local_transport = error: local delivery disabled
+
+# Recipient delimiter for extended addresses
+recipient_delimiter = +
+
+# Empty alias list to override the configuration variable and disable NIS
+alias_maps =
+
+#
+# TLS
+#
+
+# General TLS configuration
+tls_high_cipherlist = EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA256:EECDH:+CAMELLIA128:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!IDEA:!ECDSA:kEDH:CAMELLIA128-SHA:AES128-SHA
+tls_preempt_cipherlist = yes
+tls_ssl_options = NO_COMPRESSION
+
+# Outgoing TLS is more flexible because 1. not all receiving servers will
+# support TLS, 2. not all will have and up-to-date TLS stack.
+smtp_tls_security_level = may
+smtp_tls_mandatory_protocols = !SSLv2,!SSLv3
+smtp_tls_protocols =!SSLv2,!SSLv3
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+
+#
+# Restrictions
+#
+
+# Delay all rejects until all information can be logged
+smtpd_delay_reject = yes
+
+# Restrictions for incoming SMTP, other restrictions are applied in master.cf
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+
+smtpd_recipient_restrictions =
+  permit_mynetworks,
+  reject_non_fqdn_sender,
+  reject_unknown_sender_domain,
+  reject_unknown_recipient_domain,
+  reject_unverified_recipient,
+  permit
+
+unverified_recipient_reject_reason = address lookup failure
+
