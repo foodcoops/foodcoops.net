@@ -9,10 +9,10 @@ services:
         ${DOMAIN},www.${DOMAIN}
         app.${DOMAIN}
       CERTBOT_EMAIL: admin@${DOMAIN}
-      CERTBOT_TOUCH_FILE: /haproxy_triggers/reload
+      CERTBOT_TOUCH_FILE: /triggers/reload-certs
     volumes:
       - certs:/certs
-      - haproxy_triggers:/haproxy_triggers
+      - triggers:/triggers
 
   foodsoft:
     build: foodsoft
@@ -52,13 +52,13 @@ services:
     build: haproxy
     restart: always
     environment:
-      - HAPROXY_RELOAD_FILE=/haproxy_triggers/reload
+      - HAPROXY_RELOAD_FILE=/triggers/reload-certs
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - certs:/certs:ro
-      - haproxy_triggers:/haproxy_triggers
+      - triggers:/triggers
 
   mariadb:
     image: mariadb:10.3
@@ -108,11 +108,15 @@ services:
     environment:
       - DOMAIN=app.${DOMAIN}
       - HOSTNAME=app.${DOMAIN}
+      - POSTFIX_RELOAD_FILE=/triggers/reload-certs
     ports:
       - "25:25"
+    volumes:
+      - certs:/certs:ro
+      - triggers:/triggers
 
 volumes:
   certs:
-  haproxy_triggers:
   mariadb:
   supplier_assets:
+  triggers:
