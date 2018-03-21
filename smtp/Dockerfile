@@ -1,6 +1,7 @@
 FROM alpine:3.5
 
-RUN apk add --no-cache postfix rsyslog
+RUN apk add --no-cache postfix rsyslog ca-certificates && \
+    update-ca-certificates
 
 COPY rsyslog.conf /etc/
 COPY main.cf /etc/postfix/

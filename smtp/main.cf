@@ -49,6 +49,12 @@ alias_maps =
 tls_high_cipherlist = EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA256:EECDH:+CAMELLIA128:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!IDEA:!ECDSA:kEDH:CAMELLIA128-SHA:AES128-SHA
 tls_preempt_cipherlist = yes
 tls_ssl_options = NO_COMPRESSION
+smtpd_tls_CApath = /etc/ssl/certs/
+
+# Incoming TLS
+smtpd_tls_cert_file = # overridden by postconf
+smtpd_tls_key_file = $smtpd_tls_cert_file
+smtpd_tls_security_level = may
 
 # Outgoing TLS is more flexible because 1. not all receiving servers will
 # support TLS, 2. not all will have and up-to-date TLS stack.
