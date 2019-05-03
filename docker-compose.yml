@@ -49,6 +49,18 @@ services:
       - SMTP_SERVER_PORT=2525
       - SMTP_SERVER_HOST=0.0.0.0
 
+  foodsoft_latest:
+    build: foodsoft-latest
+    restart: always
+    environment:
+      - DATABASE_URL=mysql2://foodsoft_latest:${FOODSOFT_LATEST_DB_PASSWORD}@mariadb/foodsoft_latest?encoding=utf8mb4
+      - EMAIL_SENDER=noreply@${DOMAIN}
+      - HOSTNAME=app.${DOMAIN}
+      - QUEUE=foodsoft_latest_notifier
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY_BASE=${FOODSOFT_LATEST_SECRET_KEY_BASE}
+      - SHAREDLISTS_DATABASE_URL=mysql2://foodsoft_latest:${FOODSOFT_LATEST_DB_PASSWORD}@mariadb/sharedlists?encoding=utf8mb4
+
   haproxy:
     build: haproxy
     restart: always

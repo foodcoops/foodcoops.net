@@ -15,6 +15,8 @@ To get it running yourself, you need to provide the private information via envi
 export DOMAIN=foodcoops.test
 export FOODSOFT_DB_PASSWORD=secret_fs
 export FOODSOFT_SECRET_KEY_BASE=1234567890abcdefghijklmnoprstuvwxyz
+export FOODSOFT_LATEST_DB_PASSWORD=secret_fsl
+export FOODSOFT_LATEST_SECRET_KEY_BASE=67890abcdefghijklmnoprstuvwxyz12345
 export MYSQL_ROOT_PASSWORD=mysql
 export SHAREDLISTS_DB_PASSWORD=sharedlists
 export SHAREDLISTS_SECRET_KEY_BASE=abcdefghijklmnopqrstuvwxyz1234567890
@@ -43,11 +45,12 @@ Then run the following SQL commands:
 CREATE DATABASE foodsoft_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
 GRANT ALL ON foodsoft.* TO foodsoft@'%' IDENTIFIED BY 'secret_fs';
 
+CREATE DATABASE foodsoft_latest CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
+GRANT ALL ON foodsoft_latest.* TO foodsoft_latest@'%' IDENTIFIED BY 'secret_fsl';
+
 -- setup sharedlists database
 CREATE DATABASE sharedlists CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
 GRANT ALL ON sharedlists.* TO sharedlists@'%' IDENTIFIED BY 'secret_sl';
-GRANT SELECT ON sharedlists.suppliers TO foodsoft@'%';
-GRANT SELECT ON sharedlists.articles TO foodsoft@'%';
 ```
 
 Subsequently you need to populate the databases:
@@ -57,6 +60,15 @@ docker-compose run --rm foodsoft bundle exec rake db:setup
 docker-compose run --rm sharedlists bundle exec rake db:setup
 ```
 
+Then you can grant permissions to sharedlists tables (using `mysql` as before):
+
+```sql
+GRANT SELECT ON sharedlists.suppliers TO foodsoft@'%';
+GRANT SELECT ON sharedlists.articles TO foodsoft@'%';
+GRANT SELECT ON sharedlists.suppliers TO foodsoft_latest@'%';
+GRANT SELECT ON sharedlists.articles TO foodsoft_latest@'%';
+```
+
 Finally setup the demo database. Since we specify the database via environment
 variables `multicoops:run_single` doesn't work with `db`-setup tasks, so we
 need to do this differently right now.
@@ -64,6 +76,10 @@ need to do this differently right now.
 ```shell
 docker-compose run --rm \
   -e 'DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/foodsoft_demo?encoding=utf8mb4' \
+  foodsoft bundle exec rake db:schema:load db:seed:small.en
+
+docker-compose run --rm \
+  -e 'DATABASE_URL=mysql2://foodsoft_latest:${FOODSOFT_LATEST_DB_PASSWORD}@mariadb/foodsoft_latest?encoding=utf8mb4' \
   foodsoft bundle exec rake db:schema:load db:seed:small.en
 ```
 

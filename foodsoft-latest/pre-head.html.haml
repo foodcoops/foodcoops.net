@@ -1,0 +1,9 @@
+    -# When the Crodwin dummy-locale is selected, load the Crowdin integration.
+    - if I18n.locale == :ach
+      :javascript
+        var _jipt = [
+          ['project', 'foodsoft'],
+          ['escape', function() { window.location.href = '/latest?locale=en'; }]
+        ];
+      = javascript_include_tag "//cdn.crowdin.com/jipt/jipt.js"
+
