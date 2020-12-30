@@ -57,7 +57,9 @@ GRANT ALL ON sharedlists.* TO sharedlists@'%' IDENTIFIED BY 'secret_sl';
 Subsequently you need to populate the databases:
 
 ```shell
-docker-compose run --rm foodsoft bundle exec rake db:setup
+#TODO: is it alright to remove this line? If we execute this command, then db:schema:load (see below) will complain.
+#docker-compose run --rm foodsoft bundle exec rake db:setup
+
 docker-compose run --rm sharedlists bundle exec rake db:setup
 ```
 
