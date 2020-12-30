@@ -18,7 +18,7 @@ export FOODSOFT_SECRET_KEY_BASE=1234567890abcdefghijklmnoprstuvwxyz
 export FOODSOFT_LATEST_DB_PASSWORD=secret_fsl
 export FOODSOFT_LATEST_SECRET_KEY_BASE=67890abcdefghijklmnoprstuvwxyz12345
 export MYSQL_ROOT_PASSWORD=mysql
-export SHAREDLISTS_DB_PASSWORD=sharedlists
+export SHAREDLISTS_DB_PASSWORD=secret_sl
 export SHAREDLISTS_SECRET_KEY_BASE=abcdefghijklmnopqrstuvwxyz1234567890
 # remove the following line on production when ready
 export CERTBOT_DISABLED=1
@@ -37,13 +37,14 @@ On first time run, you'll need to setup the database. Start and connect to it as
 ```shell
 docker-compose up -d mariadb redis
 docker exec -it foodcoopsnet_mariadb_1 mysql -u root -p
+# when prompted, enter the password exported as MYSQL_ROOT_PASSWORD above
 ```
 
 Then run the following SQL commands:
 
 ```sql
 CREATE DATABASE foodsoft_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
-GRANT ALL ON foodsoft.* TO foodsoft@'%' IDENTIFIED BY 'secret_fs';
+GRANT ALL ON foodsoft_demo.* TO foodsoft@'%' IDENTIFIED BY 'secret_fs';
 
 CREATE DATABASE foodsoft_latest CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
 GRANT ALL ON foodsoft_latest.* TO foodsoft_latest@'%' IDENTIFIED BY 'secret_fsl';
@@ -75,12 +76,19 @@ need to do this differently right now.
 
 ```shell
 docker-compose run --rm \
-  -e 'DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/foodsoft_demo?encoding=utf8mb4' \
+  -e "DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/foodsoft_demo?encoding=utf8mb4" \
   foodsoft bundle exec rake db:schema:load db:seed:small.en
 
-docker-compose run --rm --entrypoint=/bin/bash \
-  -e 'DATABASE_URL=mysql2://foodsoft_latest:${FOODSOFT_LATEST_DB_PASSWORD}@mariadb/foodsoft_latest?encoding=utf8mb4' \
-  foodsoft_latest bundle exec rake db:drop db:create db:schema:load db:seed:small.en
+#TODO: re-enable foodsoft_latest
+#docker-compose run --rm --entrypoint=/bin/bash \
+#  -e "DATABASE_URL=mysql2://foodsoft_latest:${FOODSOFT_LATEST_DB_PASSWORD}@mariadb/foodsoft_latest?encoding=utf8mb4" \
+#  foodsoft_latest bundle exec rake db:drop db:create db:schema:load db:seed:small.en
+
+docker-compose restart
+
+# browse to https://localhost/ (redirect from http://localhost/ should also work)
+
+# add exception to accept self-signed certificate
 ```
 
 ### SSL certificates
