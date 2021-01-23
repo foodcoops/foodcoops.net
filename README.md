@@ -8,80 +8,20 @@ please proceed to [common tasks](#common-tasks).
 
 ## Setup
 
-To get it running yourself, you need to provide the private information via environment variables to
-`docker-compose`. Here is an example to build and start the project:
+Application data is stored in docker volumes, see `docker-compose.yml` for the current list. These volumes will
+also contain your database, so handle them wisely and apply a backup strategy that suits your needs.
 
-```shell
-export DOMAIN=foodcoops.test
-export FOODSOFT_DB_PASSWORD=secret_fs
-export FOODSOFT_SECRET_KEY_BASE=1234567890abcdefghijklmnoprstuvwxyz
-export FOODSOFT_LATEST_DB_PASSWORD=secret_fsl
-export FOODSOFT_LATEST_SECRET_KEY_BASE=67890abcdefghijklmnoprstuvwxyz12345
-export MYSQL_ROOT_PASSWORD=mysql
-export SHAREDLISTS_DB_PASSWORD=sharedlists
-export SHAREDLISTS_SECRET_KEY_BASE=abcdefghijklmnopqrstuvwxyz1234567890
-# remove the following line on production when ready
-export CERTBOT_DISABLED=1
+Configuration and passwords must be provided in a `.env` file. If the `.env` file does not exist then it is
+automatically created by the setup script `./scripts/initial-setup.sh` from the `env.erb` file.
 
-docker-compose build --pull
-docker-compose pull
-docker-compose up -d
-```
+The following steps should get you started after a fresh docker and docker-compose install:
 
-You can also store the variables in `.env` instead.
-
-### Initial database setup
-
-On first time run, you'll need to setup the database. Start and connect to it as root:
-
-```shell
-docker-compose up -d mariadb redis
-docker exec -it foodcoopsnet_mariadb_1 mysql -u root -p
-```
-
-Then run the following SQL commands:
-
-```sql
-CREATE DATABASE foodsoft_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
-GRANT ALL ON foodsoft.* TO foodsoft@'%' IDENTIFIED BY 'secret_fs';
-
-CREATE DATABASE foodsoft_latest CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
-GRANT ALL ON foodsoft_latest.* TO foodsoft_latest@'%' IDENTIFIED BY 'secret_fsl';
-
--- setup sharedlists database
-CREATE DATABASE sharedlists CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
-GRANT ALL ON sharedlists.* TO sharedlists@'%' IDENTIFIED BY 'secret_sl';
-```
-
-Subsequently you need to populate the databases:
-
-```shell
-docker-compose run --rm foodsoft bundle exec rake db:setup
-docker-compose run --rm sharedlists bundle exec rake db:setup
-```
-
-Then you can grant permissions to sharedlists tables (using `mysql` as before):
-
-```sql
-GRANT SELECT ON sharedlists.suppliers TO foodsoft@'%';
-GRANT SELECT ON sharedlists.articles TO foodsoft@'%';
-GRANT SELECT ON sharedlists.suppliers TO foodsoft_latest@'%';
-GRANT SELECT ON sharedlists.articles TO foodsoft_latest@'%';
-```
-
-Finally setup the demo database. Since we specify the database via environment
-variables `multicoops:run_single` doesn't work with `db`-setup tasks, so we
-need to do this differently right now.
-
-```shell
-docker-compose run --rm \
-  -e 'DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/foodsoft_demo?encoding=utf8mb4' \
-  foodsoft bundle exec rake db:schema:load db:seed:small.en
-
-docker-compose run --rm --entrypoint=/bin/bash \
-  -e 'DATABASE_URL=mysql2://foodsoft_latest:${FOODSOFT_LATEST_DB_PASSWORD}@mariadb/foodsoft_latest?encoding=utf8mb4' \
-  foodsoft_latest bundle exec rake db:drop db:create db:schema:load db:seed:small.en
-```
+1. ensure that you have not yet initialized your database (see output of `docker volume ls`)
+1. make sure that the ports 25, 80, and 443 are not yet occupied
+1. run the all-in-one setup script `./scripts/initial-setup.sh`
+1. browse to https://localhost/ (redirect from http://localhost/ should also work)
+1. accept the self-signed certificate
+1. login with admin/secret
 
 ### SSL certificates
 
@@ -159,24 +99,19 @@ What do we need to know?
 Make sure to have this information before adding it to our configuration.
 
 1. Add a new section to [`foodsoft/app_config.yml`](foodsoft/app_config.yml). You could copy the
-   `demo` instance. Make sure that each foodcoop has a unique identifier, and doesn't contain
-   any 'weird' characters. You may set the _name_ as well. The database should be lowercase alphabet,
-   prefixed with `foodsoft_` (in this example that is `foodsoft_myfoodcoop`). Make sure to set it in
-   the configuration.
+   `demo` instance. Make sure that each foodcoop has a unique identifier that matches `^[a-z]+$`.
+   The database name should be prefixed with `foodsoft_` (in this example that is
+   `foodsoft_myfoodcoop`). Make sure to set it in the configuration.
 
 2. Commit the changes, push and [deploy](#deploying).
 
-3. Create the database. [Open](#initial-database-setup) a MySQL shell, and run:
-   ```sql
-   CREATE DATABASE foodsoft_myfoodcoop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
+3. Create and initialize the database (substituting `myfoodcoop`):
+   ```shell
+   ./scripts/create-and-init-foodcoop-database.sh myfoodcoop
    ```
 
-4. Initialize the database (substituting `${FOODSOFT_DB_PASSWORD}` and `foodsoft_myfoodcoop`):
-   ```shell
-   docker-compose run --rm \
-     -e 'DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/foodsoft_myfoodcoop?encoding=utf8mb4' \
-     foodsoft bundle exec rake db:setup
-   ```
+4. Ensure that the previous step ended with the message
+   > successfully initialized foodsoft_myfoodcoop
 
 5. Immediately login with `admin` / `secret` and change the user details and password. The `admin`
    user should become the user account of the first contact person, so use their email address
