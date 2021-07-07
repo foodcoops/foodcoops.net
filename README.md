@@ -128,7 +128,11 @@ chmod u+x /etc/cron.daily/deploy.sh
 
 When you've made a change to this repository, you'll likely want to deploy it to production.
 First push the changes to the [Github repository](https://github.com/foodcoops/foodcoops.net),
-then run `deploy.sh` on the server.
+then run the following command on the server:
+```shell
+cd /var/git/foodcoops.net
+sudo -u deploy ./deploy.sh
+```
 
 ### Upgrading Foodsoft
 
@@ -173,6 +177,7 @@ Make sure to have this information before adding it to our configuration.
 
 4. Initialize the database (substituting `${FOODSOFT_DB_PASSWORD}` and `foodsoft_myfoodcoop`):
    ```shell
+   cd /var/git/foodcoops.net
    docker-compose run --rm \
      -e 'DATABASE_URL=mysql2://foodsoft:${FOODSOFT_DB_PASSWORD}@mariadb/foodsoft_myfoodcoop?encoding=utf8mb4' \
      foodsoft bundle exec rake db:setup
